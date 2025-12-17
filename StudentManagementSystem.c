@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #define MAX 100
 
@@ -13,7 +14,7 @@ struct Student {
 struct Student students[MAX];
 int count = 0;
 
-// ---- FUNCTION PROTOTYPES ----
+/* -------- FUNCTION PROTOTYPES -------- */
 void saveToFile();
 void loadFromFile();
 void addStudent();
@@ -22,12 +23,12 @@ int searchStudent(int id);
 void search();
 void update();
 void deleteStudent();
+int isValidName(const char *name);
 
-
-// ---- SAVE DATA TO FILE ----
+/* -------- SAVE DATA -------- */
 void saveToFile() {
     FILE *fp = fopen("students.dat", "wb");
-    if (fp == NULL) {
+    if (!fp) {
         printf("Error saving file.\n");
         return;
     }
@@ -35,18 +36,32 @@ void saveToFile() {
     fclose(fp);
 }
 
-
-// ---- LOAD DATA FROM FILE ----
+/* -------- LOAD DATA -------- */
 void loadFromFile() {
     FILE *fp = fopen("students.dat", "rb");
-    if (fp != NULL) {
+    if (fp) {
         count = fread(students, sizeof(struct Student), MAX, fp);
         fclose(fp);
     }
 }
 
+/* -------- VALIDATE NAME -------- */
+int isValidName(const char *name) {
+    int hasAlpha = 0;
 
-// ---- SEARCH STUDENT BY ID (USED INTERNALLY) ----
+    for (int i = 0; name[i]; i++) {
+        if (isalpha(name[i])) {
+            hasAlpha = 1;
+        } else if (name[i] == ' ') {
+            continue;
+        } else {
+            return 0; // invalid character
+        }
+    }
+    return hasAlpha;
+}
+
+/* -------- SEARCH BY ID -------- */
 int searchStudent(int id) {
     for (int i = 0; i < count; i++)
         if (students[i].id == id)
@@ -54,8 +69,7 @@ int searchStudent(int id) {
     return -1;
 }
 
-
-// ---- ADD STUDENT ----
+/* -------- ADD STUDENT -------- */
 void addStudent() {
     if (count >= MAX) {
         printf("Limit reached.\n");
@@ -68,24 +82,36 @@ void addStudent() {
     scanf("%d", &s.id);
 
     if (searchStudent(s.id) != -1) {
-        printf("ID %d is already taken.\n", s.id);
+        printf("ID already exists.\n");
         return;
     }
 
-    printf("Enter Name: ");
-    scanf("%s", s.name);
+    getchar(); // clear newline
+
+    while (1) {
+        printf("Enter Name: ");
+        fgets(s.name, sizeof(s.name), stdin);
+        s.name[strcspn(s.name, "\n")] = '\0';
+
+        if (isValidName(s.name))
+            break;
+
+        printf("Invalid name. Use alphabets and spaces only.\n");
+    }
+
     printf("Enter Age: ");
     scanf("%d", &s.age);
+
     printf("Enter Marks: ");
     scanf("%f", &s.marks);
 
     students[count++] = s;
     saveToFile();
+
     printf("Student added successfully.\n");
 }
 
-
-// ---- DISPLAY ALL STUDENTS ----
+/* -------- DISPLAY ALL -------- */
 void displayAll() {
     if (count == 0) {
         printf("No records found.\n");
@@ -101,8 +127,7 @@ void displayAll() {
     }
 }
 
-
-// ---- SEARCH STUDENT (USER OPTION) ----
+/* -------- SEARCH -------- */
 void search() {
     int id;
     printf("Enter ID to search: ");
@@ -120,8 +145,7 @@ void search() {
     }
 }
 
-
-// ---- UPDATE STUDENT ----
+/* -------- UPDATE -------- */
 void update() {
     int id;
     printf("Enter ID to update: ");
@@ -133,10 +157,22 @@ void update() {
         return;
     }
 
-    printf("Enter new Name: ");
-    scanf("%s", students[index].name);
+    getchar(); // clear newline
+
+    while (1) {
+        printf("Enter new Name: ");
+        fgets(students[index].name, sizeof(students[index].name), stdin);
+        students[index].name[strcspn(students[index].name, "\n")] = '\0';
+
+        if (isValidName(students[index].name))
+            break;
+
+        printf("Invalid name. Use alphabets and spaces only.\n");
+    }
+
     printf("Enter new Age: ");
     scanf("%d", &students[index].age);
+
     printf("Enter new Marks: ");
     scanf("%f", &students[index].marks);
 
@@ -144,8 +180,7 @@ void update() {
     printf("Student updated.\n");
 }
 
-
-// ---- DELETE STUDENT ----
+/* -------- DELETE -------- */
 void deleteStudent() {
     int id;
     printf("Enter ID to delete: ");
@@ -165,8 +200,7 @@ void deleteStudent() {
     printf("Student deleted.\n");
 }
 
-
-// ---- MAIN PROGRAM ----
+/* -------- MAIN -------- */
 int main() {
     loadFromFile();
     int choice;
@@ -180,7 +214,11 @@ int main() {
         printf("5. Display All Students\n");
         printf("6. Exit\n");
         printf("Enter choice: ");
-        scanf("%d", &choice);
+
+        if (scanf("%d", &choice) != 1) {
+            printf("Invalid input.\n");
+            return 0;
+        }
 
         switch (choice) {
             case 1: addStudent(); break;
